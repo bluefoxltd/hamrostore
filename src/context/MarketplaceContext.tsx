@@ -56,6 +56,12 @@ interface MarketplaceContextType {
   createBooking: (bookingData: Omit<BookingOrder, 'id' | 'bookingDate'>) => BookingOrder;
   cancelBooking: (bookingId: string) => void;
   returnRentalItem: (bookingId: string) => void;
+  escalateOrderToDispute: (
+    orderId: string,
+    reason: string,
+    resolutionRequested: 'full_refund' | 'replacement' | 'mediation',
+    evidenceNotes?: string
+  ) => void;
   
   addCampaign: (campaign: Omit<CreatorCampaign, 'id' | 'createdAt' | 'proposals' | 'approvedCount'>) => void;
   submitCreatorProposal: (campaignId: string, proposal: Omit<CreatorProposal, 'id' | 'submittedAt' | 'status'>) => void;
@@ -486,6 +492,59 @@ export const MarketplaceProvider: React.FC<{ children: React.ReactNode }> = ({ c
     );
   };
 
+  const escalateOrderToDispute = (
+    orderId: string,
+    reason: string,
+    resolutionRequested: 'full_refund' | 'replacement' | 'mediation',
+    evidenceNotes?: string
+  ) => {
+    const target = bookings.find((b) => b.id === orderId);
+    if (!target) return;
+
+    const caseId = `DSP-${Math.floor(10000 + Math.random() * 90000)}`;
+    const today = new Date().toISOString().split('T')[0];
+
+    // Update booking status to disputed with dispute details
+    setBookings((prev) =>
+      prev.map((b) =>
+        b.id === orderId
+          ? {
+              ...b,
+              status: 'disputed',
+              escrowStatus: 'held_in_escrow', // Frozen
+              disputeDetails: {
+                caseId,
+                reason,
+                resolutionRequested,
+                disputedAt: today,
+                evidenceNotes,
+                status: 'under_investigation',
+                assignedAgent: 'Senior Escalations Agent David V. (Trust & Safety)',
+              },
+            }
+          : b
+      )
+    );
+
+    // Notify customer and platform support
+    const disputeNotification: NotificationItem = {
+      id: `notif-dsp-${Date.now()}`,
+      type: 'order_update',
+      title: `⚠️ Dispute Registered: Case #${caseId}`,
+      message: `Order #${orderId} (${target.listingTitle}) is now in Dispute status. Funds ($${target.totalAmount}) are frozen in Escrow. BlueCode Support Concierge has taken immediate ownership.`,
+      timestamp: 'Just now',
+      read: false,
+      listingId: target.listingId,
+    };
+
+    setNotifications((prev) => [disputeNotification, ...prev]);
+
+    showToast(
+      `Order #${orderId} escalated to Dispute status. Platform support team alerted and escrow frozen.`,
+      'error'
+    );
+  };
+
   const addCampaign = (
     newCampaignData: Omit<CreatorCampaign, 'id' | 'createdAt' | 'proposals' | 'approvedCount'>
   ) => {
@@ -655,6 +714,7 @@ export const MarketplaceProvider: React.FC<{ children: React.ReactNode }> = ({ c
         createBooking,
         cancelBooking,
         returnRentalItem,
+        escalateOrderToDispute,
         addCampaign,
         submitCreatorProposal,
         updateProposalStatus,

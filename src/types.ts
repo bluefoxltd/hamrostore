@@ -158,13 +158,22 @@ export interface BookingOrder {
   sellerPayout?: number; // 80% net payout to the provider
   insuranceFee?: number;
   totalAmount: number;
-  status: 'active_rental' | 'confirmed' | 'in_progress' | 'completed' | 'cancelled';
+  status: 'active_rental' | 'confirmed' | 'in_progress' | 'completed' | 'cancelled' | 'disputed';
   escrowStatus: 'held_in_escrow' | 'released' | 'refunded';
   paymentMethod: string;
   bookingDate: string;
   pickupLocation?: string;
   notes?: string;
   conciergeAssigned?: string;
+  disputeDetails?: {
+    caseId: string;
+    reason: string;
+    resolutionRequested: 'full_refund' | 'replacement' | 'mediation';
+    disputedAt: string;
+    evidenceNotes?: string;
+    status: 'under_investigation' | 'reviewing_evidence' | 'arbitrated' | 'resolved';
+    assignedAgent: string;
+  };
 }
 
 export interface SupportMessage {

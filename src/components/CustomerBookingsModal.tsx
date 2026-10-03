@@ -9,6 +9,7 @@ import {
   MapPin,
   FileText,
   Headphones,
+  AlertOctagon,
 } from 'lucide-react';
 import { useMarketplace } from '../context/MarketplaceContext';
 
@@ -122,12 +123,18 @@ export const CustomerBookingsModal: React.FC = () => {
                         <span className="text-slate-300">·</span>
                         <span
                           className={`font-semibold px-2 py-0.5 rounded text-[10px] ${
-                            order.status === 'completed'
+                            order.status === 'disputed'
+                              ? 'bg-rose-100 text-rose-800 border border-rose-300 font-bold'
+                              : order.status === 'completed'
                               ? 'bg-slate-100 text-slate-700'
                               : 'bg-emerald-50 text-emerald-800'
                           }`}
                         >
-                          {order.status === 'completed' ? 'Completed & Deposit Returned' : 'Active Booking'}
+                          {order.status === 'disputed'
+                            ? `⚠️ In Dispute (${order.disputeDetails?.caseId || 'Escrow Frozen'})`
+                            : order.status === 'completed'
+                            ? 'Completed & Deposit Returned'
+                            : 'Active Booking'}
                         </span>
                         <span className="text-slate-300">·</span>
                         <span className="text-slate-400">Booked: {order.bookingDate}</span>
@@ -186,17 +193,41 @@ export const CustomerBookingsModal: React.FC = () => {
                     </div>
 
                     <div className="flex flex-wrap items-center gap-2 font-sans">
-                      {/* 24/7 Concierge Bridging CTA */}
-                      <button
-                        onClick={() => setActiveModal('customer_care')}
-                        className="px-2.5 py-1.5 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-800 border border-blue-200 text-xs font-semibold transition-colors flex items-center gap-1 cursor-pointer"
-                        title="Connect with BlueCode Concierge to bridge with this provider"
-                      >
-                        <Headphones className="w-3.5 h-3.5 text-blue-600" />
-                        <span>Concierge Care</span>
-                      </button>
+                      {order.status === 'disputed' ? (
+                        <button
+                          onClick={() => setActiveModal('customer_care')}
+                          className="px-2.5 py-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-800 border border-rose-300 text-xs font-bold transition-colors flex items-center gap-1 cursor-pointer animate-pulse"
+                          title="View active dispute case and escrow freeze details"
+                        >
+                          <AlertOctagon className="w-3.5 h-3.5 text-rose-600" />
+                          <span>View Dispute Case</span>
+                        </button>
+                      ) : (
+                        <>
+                          {/* 24/7 Concierge Bridging CTA */}
+                          <button
+                            onClick={() => setActiveModal('customer_care')}
+                            className="px-2.5 py-1.5 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-800 border border-blue-200 text-xs font-semibold transition-colors flex items-center gap-1 cursor-pointer"
+                            title="Connect with BlueCode Concierge to bridge with this provider"
+                          >
+                            <Headphones className="w-3.5 h-3.5 text-blue-600" />
+                            <span>Concierge Care</span>
+                          </button>
 
-                      {isRental && order.status !== 'completed' && (
+                          {order.status !== 'completed' && order.status !== 'cancelled' && (
+                            <button
+                              onClick={() => setActiveModal('customer_care')}
+                              className="px-2 py-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-xs font-semibold transition-colors flex items-center gap-1 cursor-pointer"
+                              title="Contest service delivery and escalate to Dispute"
+                            >
+                              <AlertOctagon className="w-3.5 h-3.5 text-rose-600" />
+                              <span>Dispute</span>
+                            </button>
+                          )}
+                        </>
+                      )}
+
+                      {isRental && order.status !== 'completed' && order.status !== 'disputed' && (
                         <button
                           onClick={() => returnRentalItem(order.id)}
                           className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-xs transition-colors flex items-center gap-1 cursor-pointer"
@@ -206,7 +237,7 @@ export const CustomerBookingsModal: React.FC = () => {
                         </button>
                       )}
 
-                      {order.status !== 'completed' && order.status !== 'cancelled' && (
+                      {order.status !== 'completed' && order.status !== 'cancelled' && order.status !== 'disputed' && (
                         <button
                           onClick={() => cancelBooking(order.id)}
                           className="px-3 py-1.5 rounded-lg border border-slate-300 text-slate-600 hover:text-rose-600 text-xs font-semibold cursor-pointer"
