@@ -1,0 +1,6 @@
+{
+  "name": "BlueCode Marketplace",
+  "description": "One Marketplace. Everything You Need. Peer-to-peer rentals, on-demand services, creator campaigns, and professional hiring across 18 verticals.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
